@@ -1,0 +1,320 @@
+<div class="dashboard-content">
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1>Welcome back, <%= user.firstName %>! 👋</h1>
+                <p>Track your hackathon journey and manage your projects</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#joinHackathonModal">
+                    <i class="fas fa-plus-circle me-2"></i>Join New Hackathon
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Overview with inline layout -->
+    <div class="stats-container mb-4">
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="stat-info">
+                    <h3><%= stats.hackathonsJoined || 0 %></h3>
+                    <p>Hackathons</p>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <h3><%= stats.activeTeams || 0 %></h3>
+                    <p>Teams</p>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="stat-info">
+                    <h3><%= stats.projectsSubmitted || 0 %></h3>
+                    <p>Projects</p>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="stat-info">
+                    <h3><%= stats.achievements || 0 %></h3>
+                    <p>Achievements</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Progress Section -->
+    <section class="dashboard-section mb-4">
+        <div class="dashboard-card">
+            <h2>Project Progress</h2>
+            <div class="progress-timeline">
+                <% if (activeHackathons && activeHackathons.length > 0) { %>
+                    <% activeHackathons.forEach(hackathon => { %>
+                        <div class="timeline-item">
+                            <div class="timeline-dot <%= hackathon.progress >= 100 ? 'completed' : '' %>"></div>
+                            <div class="timeline-content">
+                                <h4><%= hackathon.title %></h4>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: <%= hackathon.progress || 0 %>%"
+                                         aria-valuenow="<%= hackathon.progress || 0 %>"
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        <%= hackathon.progress || 0 %>%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <div class="alert alert-info">
+                        No active hackathons found. <a href="#" data-bs-toggle="modal" data-bs-target="#joinHackathonModal">Join a hackathon</a> to start tracking progress!
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Collaboration Section -->
+    <section class="dashboard-section mb-4">
+        <div class="dashboard-card">
+            <h2>Team Collaboration</h2>
+            <div class="team-members">
+                <% if (teams && teams.length > 0) { %>
+                    <% teams.forEach(team => { %>
+                        <div class="team-card mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h4><%= team.name %></h4>
+                                <span class="badge bg-<%= team.hackathon.status === 'active' ? 'success' : 'secondary' %>">
+                                    <%= team.hackathon.status %>
+                                </span>
+                            </div>
+                            <p class="text-muted">Hackathon: <%= team.hackathon.title %></p>
+                            <div class="team-stats">
+                                <span><i class="fas fa-users me-2"></i><%= team.members.length %> Members</span>
+                                <% if (team.isRecruiting) { %>
+                                    <span class="badge bg-info ms-2">Recruiting</span>
+                                <% } %>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-sm btn-primary" onclick="openTeamChat('<%= team._id %>')">
+                                    <i class="fas fa-comments me-2"></i>Team Chat
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary ms-2" onclick="manageTeam('<%= team._id %>')">
+                                    <i class="fas fa-cog me-2"></i>Manage
+                                </button>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <div class="alert alert-info">
+                        No teams joined yet. Join a hackathon to create or join a team!
+                    </div>
+                <% } %>
+                <button class="btn btn-outline-primary btn-sm mt-3" data-bs-toggle="modal" data-bs-target="#createTeamModal">
+                    <i class="fas fa-plus"></i> Create New Team
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Project Showcase -->
+    <section class="dashboard-section mb-4">
+        <div class="dashboard-card">
+            <h2>Project Showcase</h2>
+            <% if (recentSubmissions && recentSubmissions.length > 0) { %>
+                <div class="project-showcase">
+                    <div class="project-content">
+                        <h3><%= recentSubmissions[0].projectName %></h3>
+                        <p class="text-muted">Submitted for <%= recentSubmissions[0].hackathon.title %></p>
+                        <div class="skill-tags">
+                            <% (recentSubmissions[0].technologies || []).forEach(tech => { %>
+                                <span class="skill-tag"><%= tech %></span>
+                            <% }) %>
+                        </div>
+                        <div class="project-links mt-3">
+                            <% if (recentSubmissions[0].githubLink) { %>
+                                <a href="<%= recentSubmissions[0].githubLink %>" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fab fa-github me-2"></i>View Code
+                                </a>
+                            <% } %>
+                            <% if (recentSubmissions[0].demoLink) { %>
+                                <a href="<%= recentSubmissions[0].demoLink %>" target="_blank" class="btn btn-sm btn-outline-secondary ms-2">
+                                    <i class="fas fa-external-link-alt me-2"></i>Live Demo
+                                </a>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="alert alert-info">
+                    No projects submitted yet. Join a hackathon and submit your first project!
+                </div>
+            <% } %>
+        </div>
+    </section>
+
+    <!-- Activity Feed -->
+    <section class="dashboard-section mb-4">
+        <div class="dashboard-card">
+            <h2>Recent Activity</h2>
+            <div class="activity-feed">
+                <% activities.forEach(activity => { %>
+                    <div class="activity-item">
+                        <i class="fas <%= activity.icon %>"></i>
+                        <div class="activity-content">
+                            <p><strong><%= activity.user %></strong> <%= activity.action %></p>
+                            <small><%= new Date(activity.timestamp).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            }) %></small>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Actions -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="quick-action-card" onclick="handleQuickAction('find')">
+                <i class="fas fa-search icon-find"></i>
+                <h4>Find Hackathons</h4>
+                <p>Discover new opportunities</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="quick-action-card" onclick="handleQuickAction('teams')">
+                <i class="fas fa-users icon-teams"></i>
+                <h4>My Teams</h4>
+                <p>Manage your teams</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="quick-action-card" onclick="handleQuickAction('submissions')">
+                <i class="fas fa-code icon-submissions"></i>
+                <h4>Submissions</h4>
+                <p>View your projects</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="quick-action-card" onclick="handleQuickAction('achievements')">
+                <i class="fas fa-trophy icon-achievements"></i>
+                <h4>Achievements</h4>
+                <p>Track your progress</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Hackathons -->
+    <section class="dashboard-section mb-4">
+        <div class="dashboard-card">
+            <div class="section-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>My Active Hackathons</h2>
+                    <p class="text-muted">Your ongoing hackathon challenges</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-filter me-1"></i>Filter
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" data-filter="all">All Hackathons</a></li>
+                            <li><a class="dropdown-item" href="#" data-filter="in_progress">In Progress</a></li>
+                            <li><a class="dropdown-item" href="#" data-filter="submitted">Submitted</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="hackathon-grid" id="activeHackathons">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Available Hackathons -->
+    <section class="dashboard-section mb-4">
+        <div class="dashboard-card">
+            <div class="section-header">
+                <h2>Available Hackathons</h2>
+                <p class="text-muted">Discover exciting opportunities to showcase your skills</p>
+            </div>
+            <div class="search-filter-section">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" class="form-control" id="searchHackathons" placeholder="Search hackathons...">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="filter-options">
+                            <div class="filter-chip active" data-filter="all">All</div>
+                            <div class="filter-chip" data-filter="upcoming">Upcoming</div>
+                            <div class="filter-chip" data-filter="active">Active</div>
+                            <div class="filter-chip" data-filter="featured">Featured</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="hackathon-grid" id="availableHackathons">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Submissions -->
+    <section class="dashboard-section mb-4">
+        <div class="dashboard-card">
+            <div class="section-header">
+                <h2>Recent Submissions</h2>
+                <p class="text-muted">Track your project submissions and their status</p>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Project Name</th>
+                            <th>Hackathon</th>
+                            <th>Submitted On</th>
+                            <th>Status</th>
+                            <th>Score</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="submissionsTable">
+                        <!-- Will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Include Modals -->
+<%- include('../partials/modals/join-hackathon') %>
+<%- include('../partials/modals/submit-project') %>
+<%- include('../partials/modals/view-submission') %>
+
+<!-- Add new modals -->
+<%- include('../partials/modals/add-milestone') %>
+<%- include('../partials/modals/share-resource') %>
+<%- include('../partials/modals/invite-member') %> 
